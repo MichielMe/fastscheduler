@@ -1,0 +1,44 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+*.pyc
+build/
+dist/
+wheels/
+*.egg-info
+.eggs/
+
+# Virtual environments
+.venv
+.env
+venv/
+ENV/
+
+# FastScheduler state files
+*.json
+!package.json
+!pyproject.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Examples (optional - remove if you want to include them)
+example_usage.py
+api.py
+simple_example.py
+my_app_scheduler.json
+fastscheduler_state.json

@@ -1,0 +1,36 @@
+[project]
+name = "fastscheduler"
+version = "0.1.0"
+description = "Simple, lightweight task scheduler for Python with async support"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Michiel Meire", email = "michiel.meire1@gmail.com" }]
+keywords = ["scheduler", "cron", "task", "async", "background", "jobs"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "fastapi[standard]>=0.100.0",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/yourusername/fastscheduler"
+Documentation = "https://github.com/yourusername/fastscheduler#readme"
+Repository = "https://github.com/yourusername/fastscheduler"
+Issues = "https://github.com/yourusername/fastscheduler/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8.4.2", "ruff>=0.14.4"]
