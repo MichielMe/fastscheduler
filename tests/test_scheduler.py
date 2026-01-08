@@ -1,13 +1,10 @@
 import asyncio
-import json
 import time
-from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 
 from fastscheduler import FastScheduler
-from fastscheduler.main import Job, JobStatus
+from fastscheduler.main import Job
 
 
 @pytest.fixture
