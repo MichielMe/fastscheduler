@@ -119,7 +119,7 @@ def create_scheduler_routes(scheduler: "FastScheduler", **router_kwargs) -> APIR
         template = _load_dashboard_template()
 
         # Replace template variables
-        html = template.replace("{{prefix}}", prefix)
+        html = template.replace("{{prefix}}", router_kwargs['prefix'])
 
         return html
 
