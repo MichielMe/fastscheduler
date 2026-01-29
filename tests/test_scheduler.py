@@ -167,7 +167,7 @@ class TestJobExecution:
             await asyncio.sleep(0.01)
 
         scheduler.start()
-        time.sleep(0.3)
+        time.sleep(0.4)
         scheduler.stop()
 
         assert len(executed) >= 2
@@ -791,7 +791,7 @@ class TestJobTimeout:
             time.sleep(0.01)  # Well within 5s timeout
 
         scheduler.start()
-        time.sleep(0.3)
+        time.sleep(0.4)
         scheduler.stop()
 
         assert len(executed) >= 2

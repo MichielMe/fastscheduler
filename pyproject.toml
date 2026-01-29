@@ -1,6 +1,6 @@
 [project]
 name = "fastscheduler"
-version = "0.2.0"
+version = "0.2.1"
 description = "Simple, lightweight task scheduler for Python with async support"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,9 +20,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Systems Administration",
 ]
-dependencies = [
-    "sqlmodel>=0.0.31",
-]
+dependencies = ["sqlmodel>=0.0.31"]
 
 [project.optional-dependencies]
 fastapi = ["fastapi[standard]>=0.100.0"]

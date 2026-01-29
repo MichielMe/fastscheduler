@@ -410,6 +410,13 @@ class FastScheduler:
 
             job.next_run = next_run.timestamp()
 
+    def _schedule_next_run(self, job: Job):
+        """Calculate and set the next run time for a repeating job."""
+        if job.schedule_type in ["daily", "weekly", "hourly", "cron"]:
+            self._calculate_next_run(job)
+        elif job.interval:
+            job.next_run = time.time() + job.interval
+
     def _run(self):
         """Main scheduler loop - runs in background thread."""
         if not self.quiet:
@@ -430,21 +437,8 @@ class FastScheduler:
                             continue
 
                         jobs_to_run.append(job)
-
-                        if job.repeat:
-                            if job.schedule_type in [
-                                "daily",
-                                "weekly",
-                                "hourly",
-                                "cron",
-                            ]:
-                                self._calculate_next_run(job)
-                            elif job.interval:
-                                job.next_run = time.time() + job.interval
-
-                            job.status = JobStatus.SCHEDULED
-                            job.retry_count = 0
-                            heapq.heappush(self.jobs, job)
+                        # Don't pre-schedule here - job will be re-scheduled
+                        # in _execute_job after execution completes
 
                 for job in jobs_to_run:
                     self._executor.submit(self._execute_job, job)
@@ -506,11 +500,6 @@ class FastScheduler:
 
             execution_time = time.time() - start_time
 
-            if job.repeat:
-                job.status = JobStatus.SCHEDULED
-            else:
-                job.status = JobStatus.COMPLETED
-
             with self.lock:
                 self.stats["total_runs"] += 1
 
@@ -525,6 +514,16 @@ class FastScheduler:
 
             if not self.quiet:
                 logger.info(f"{job.func_name} completed ({execution_time:.2f}s)")
+
+            # Schedule next run AFTER successful execution
+            if job.repeat:
+                job.status = JobStatus.SCHEDULED
+                job.retry_count = 0
+                self._schedule_next_run(job)
+                with self.lock:
+                    heapq.heappush(self.jobs, job)
+            else:
+                job.status = JobStatus.COMPLETED
 
         except Exception as e:
             execution_time = time.time() - start_time
@@ -569,11 +568,18 @@ class FastScheduler:
                     job.job_id,
                     job.func_name,
                     JobStatus.FAILED,
-                    error=f"Max retries: {error_msg}",
+                    error=f"Max retries exceeded: {error_msg}",
                     run_count=job.run_count,
                     retry_count=job.retry_count,
                     execution_time=execution_time,
                 )
+
+                # For repeating jobs, schedule next regular run even after max retries
+                if job.repeat:
+                    job.retry_count = 0
+                    self._schedule_next_run(job)
+                    with self.lock:
+                        heapq.heappush(self.jobs, job)
 
         finally:
             with self.lock:
