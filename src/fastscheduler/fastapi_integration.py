@@ -37,7 +37,7 @@ def _load_dashboard_template() -> str:
 </body></html>"""
 
 
-def create_scheduler_routes(scheduler: "FastScheduler", prefix: str = "/scheduler"):
+def create_scheduler_routes(scheduler: "FastScheduler", **router_kwargs) -> APIRouter:
     """
     Create FastAPI routes for scheduler management
 
@@ -53,7 +53,13 @@ def create_scheduler_routes(scheduler: "FastScheduler", prefix: str = "/schedule
 
         scheduler.start()
     """
-    router = APIRouter(prefix=prefix, tags=["scheduler"])
+    if "prefix" not in router_kwargs:
+        router_kwargs['prefix'] = "/scheduler"
+    
+    if "tags" not in router_kwargs:
+        router_kwargs['tags'] = ["scheduler"]
+    
+    router = APIRouter(**router_kwargs)
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for real-time updates"""
@@ -113,7 +119,7 @@ def create_scheduler_routes(scheduler: "FastScheduler", prefix: str = "/schedule
         template = _load_dashboard_template()
 
         # Replace template variables
-        html = template.replace("{{prefix}}", prefix)
+        html = template.replace("{{prefix}}", router_kwargs['prefix'])
 
         return html
 
