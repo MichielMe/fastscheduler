@@ -63,7 +63,7 @@ def create_scheduler_routes(scheduler: "FastScheduler", **router_kwargs) -> APIR
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for real-time updates"""
-        while True:
+        while scheduler.running:
             try:
                 # Get current state
                 stats = scheduler.get_statistics()
