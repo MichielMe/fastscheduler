@@ -11,6 +11,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
+from traceback import format_exception
 from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional, Union
 from zoneinfo import ZoneInfo
 
@@ -255,6 +256,7 @@ class FastScheduler:
         func_name: str,
         status: JobStatus,
         error: Optional[str] = None,
+        traceback: Optional[str] = None,
         run_count: int = 0,
         retry_count: int = 0,
         execution_time: Optional[float] = None,
@@ -266,6 +268,7 @@ class FastScheduler:
             status=status.value,
             timestamp=time.time(),
             error=error,
+            traceback=traceback,
             run_count=run_count,
             retry_count=retry_count,
             execution_time=execution_time,
@@ -553,6 +556,7 @@ class FastScheduler:
                     job.func_name,
                     JobStatus.FAILED,
                     error=f"Retry {job.retry_count}/{job.max_retries}: {error_msg}",
+                    traceback="".join(format_exception(e)),
                     run_count=job.run_count,
                     retry_count=job.retry_count,
                     execution_time=execution_time,
@@ -569,6 +573,7 @@ class FastScheduler:
                     job.func_name,
                     JobStatus.FAILED,
                     error=f"Max retries exceeded: {error_msg}",
+                    traceback="".join(format_exception(e)),
                     run_count=job.run_count,
                     retry_count=job.retry_count,
                     execution_time=execution_time,
