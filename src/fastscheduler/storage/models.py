@@ -107,6 +107,7 @@ class JobHistoryModel(SQLModel, table=True):
     status: str
     timestamp: float = Field(index=True)
     error: Optional[str] = None
+    traceback: Optional[str] = None
     run_count: int = 0
     retry_count: int = 0
     execution_time: Optional[float] = None
@@ -120,6 +121,7 @@ class JobHistoryModel(SQLModel, table=True):
             "status": self.status,
             "timestamp": self.timestamp,
             "error": self.error,
+            "traceback": self.traceback,
             "run_count": self.run_count,
             "retry_count": self.retry_count,
             "execution_time": self.execution_time,
@@ -137,6 +139,7 @@ class JobHistoryModel(SQLModel, table=True):
             status=data["status"],
             timestamp=data["timestamp"],
             error=data.get("error"),
+            traceback=data.get("traceback"),
             run_count=data.get("run_count", 0),
             retry_count=data.get("retry_count", 0),
             execution_time=data.get("execution_time"),
@@ -154,6 +157,7 @@ class DeadLetterModel(SQLModel, table=True):
     status: str
     timestamp: float = Field(index=True)
     error: Optional[str] = None
+    traceback: Optional[str] = None
     run_count: int = 0
     retry_count: int = 0
     execution_time: Optional[float] = None
@@ -167,6 +171,7 @@ class DeadLetterModel(SQLModel, table=True):
             "status": self.status,
             "timestamp": self.timestamp,
             "error": self.error,
+            "traceback": self.traceback,
             "run_count": self.run_count,
             "retry_count": self.retry_count,
             "execution_time": self.execution_time,
@@ -184,6 +189,7 @@ class DeadLetterModel(SQLModel, table=True):
             status=data["status"],
             timestamp=data["timestamp"],
             error=data.get("error"),
+            traceback=data.get("traceback"),
             run_count=data.get("run_count", 0),
             retry_count=data.get("retry_count", 0),
             execution_time=data.get("execution_time"),
