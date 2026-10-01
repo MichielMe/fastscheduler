@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import time
 
 import pytest
@@ -233,6 +234,109 @@ class TestJobExecution:
         scheduler.stop()
 
         assert len(counter) == 1
+
+
+class TestManualJobExecution:
+    @pytest.fixture
+    def scheduler(self, temp_state_file):
+        sched = FastScheduler(
+            state_file=str(temp_state_file), quiet=True, max_workers=1
+        )
+        yield sched
+        sched._executor.shutdown(wait=True)
+        sched._save_executor.shutdown(wait=True)
+        sched._storage.close()
+
+    @pytest.fixture
+    def submitted_jobs(self, scheduler, monkeypatch):
+        futures = []
+        submit = scheduler._executor.submit
+
+        def track_submission(*args, **kwargs):
+            future = submit(*args, **kwargs)
+            futures.append(future)
+            return future
+
+        monkeypatch.setattr(scheduler._executor, "submit", track_submission)
+        return futures
+
+    @pytest.mark.parametrize("repeat", [False, True])
+    @pytest.mark.parametrize("fail", [False, True])
+    def test_manual_execution_leaves_only_the_next_run(
+        self, scheduler, submitted_jobs, repeat, fail
+    ):
+        executions = []
+
+        @scheduler.once(1800).seconds
+        def other_job():
+            pass
+
+        other_id = scheduler.jobs[0].job_id
+        schedule = scheduler.every(3600).seconds if repeat else scheduler.once(3600).seconds
+
+        @schedule
+        def test_job():
+            executions.append(True)
+            if fail:
+                raise ValueError("manual failure")
+
+        job_id = next(job.job_id for job in scheduler.jobs if job.func is test_job)
+        assert scheduler.run_job_now(job_id) is True
+        submitted_jobs[0].result(timeout=2)
+
+        jobs = scheduler.get_jobs()
+        assert executions == [True]
+        assert sum(job["job_id"] == other_id for job in jobs) == 1
+        matching = [job for job in jobs if job["job_id"] == job_id]
+        assert len(matching) == int(repeat or fail)
+        if matching:
+            assert matching[0]["run_count"] == 1
+            assert matching[0]["retry_count"] == int(fail)
+        else:
+            assert scheduler.run_job_now(job_id) is False
+
+    def test_manual_execution_cannot_be_submitted_twice_before_starting(
+        self, scheduler, submitted_jobs
+    ):
+        worker_started = threading.Event()
+        release_worker = threading.Event()
+        executions = []
+
+        def occupy_worker():
+            worker_started.set()
+            assert release_worker.wait(timeout=5)
+
+        submitted = scheduler._executor.submit(occupy_worker)
+        try:
+            assert worker_started.wait(timeout=2)
+
+            @scheduler.once(3600).seconds
+            def test_job():
+                executions.append(True)
+
+            job_id = scheduler.jobs[0].job_id
+            assert scheduler.run_job_now(job_id) is True
+            assert scheduler.run_job_now(job_id) is False
+        finally:
+            release_worker.set()
+
+        submitted.result(timeout=2)
+        submitted_jobs[-1].result(timeout=2)
+        assert executions == [True]
+        assert scheduler.get_jobs() == []
+
+    def test_rejected_manual_submission_keeps_the_job_scheduled(self, scheduler):
+        @scheduler.once(3600).seconds
+        def test_job():
+            pass
+
+        job_id = scheduler.jobs[0].job_id
+        scheduler._executor.shutdown(wait=True)
+
+        with pytest.raises(RuntimeError):
+            scheduler.run_job_now(job_id)
+
+        assert scheduler.get_job(job_id) is not None
 
 
 class TestStatePersistence:

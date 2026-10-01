@@ -854,7 +854,7 @@ class FastScheduler:
     def run_job_now(self, job_id: str) -> bool:
         """Trigger immediate execution of a job (useful for debugging)."""
         with self.lock:
-            for job in self.jobs:
+            for i, job in enumerate(self.jobs):
                 if job.job_id == job_id:
                     if job.job_id in self._running_jobs:
                         logger.warning(f"Job {job_id} is already running")
@@ -862,6 +862,8 @@ class FastScheduler:
                     if not self.quiet:
                         logger.info(f"Manually triggered: {job.func_name} ({job_id})")
                     self._executor.submit(self._execute_job, job)
+                    self.jobs.pop(i)
+                    heapq.heapify(self.jobs)
                     return True
         return False
 
