@@ -375,6 +375,28 @@ class TestStatistics:
         for entry in history:
             assert entry["func_name"] == "test_job"
 
+    def test_history_error_traceback(self, scheduler):
+        """Test job traceback logging on failure"""
+        attempts = []
+
+        @scheduler.every(0.1).seconds.retries(3)
+        def failing_job():
+            attempts.append(1)
+            if len(attempts) < 2:
+                raise ValueError("Intentional error")
+            return "success"
+
+        scheduler.start()
+        time.sleep(0.5)
+        scheduler.stop()
+
+        # Should have history with at least one error, with stack trace string
+        history = scheduler.get_history()
+        errors = [item for item in history if item["error"] is not None]
+        assert len(errors) > 0
+        assert "traceback" in errors[0]
+        assert 'raise ValueError("Intentional error")' in errors[0]["traceback"]
+
 
 class TestSchedulerLifecycle:
     """Test scheduler lifecycle management"""

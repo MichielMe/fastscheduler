@@ -564,6 +564,32 @@
             overflow-y: auto;
         }
 
+        /* Modal */
+        #outputModal {
+            top: 50%;
+            left: 50%;
+            width: 60vw;
+            position: absolute;
+            border-radius: 10px;
+            transform: translate(-50%, -50%);
+        }
+
+        #outputModal .modal-content {
+            padding: 28px;
+            gap: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        dialog {
+            color: inherit;
+        }
+
+        dialog::backdrop {
+            opacity: 0.5;
+            background-color: #898989;
+        }
+
         /* Empty state */
         .empty-state {
             padding: 48px;
@@ -774,6 +800,7 @@
                                 <th>Time</th>
                                 <th>Duration</th>
                                 <th>Details</th>
+                                <th>Output</th>
                             </tr>
                         </thead>
                         <tbody id="history-tbody"></tbody>
@@ -808,6 +835,7 @@
                                 <th>Run #</th>
                                 <th>Retries</th>
                                 <th>Duration</th>
+                                <th>Output</th>
                             </tr>
                         </thead>
                         <tbody id="failed-tbody"></tbody>
@@ -816,6 +844,18 @@
             </div>
         </div>
     </main>
+
+    <dialog id="outputModal">
+        <div class="section-box modal-content">
+            <div class="section-header">
+                <div class="section-title" id="outputModalTitle">Modal title</div>
+                <button class="action-btn" type="button" onclick="closeOutputModal()">Dismiss</button>
+            </div>
+            <div class="dead-letter-info">
+                <pre id="outputModalBody">Modal body.</pre>
+            </div>
+        </div>
+    </dialog>
 
     <div class="toast-container" id="toast-container"></div>
 
@@ -1057,9 +1097,14 @@
                     <td><span class="history-time">${h.timestamp_readable || formatTs(h.timestamp)}</span></td>
                     <td><span class="history-duration">${h.execution_time ? h.execution_time.toFixed(2) + 's' : '-'}</span></td>
                     <td>${h.error
-                    ? `<span class="history-error" title="${esc(h.error)}">${esc(h.error)}</span>`
-                    : `<span style="color:var(--text-tertiary)">Run #${h.run_count || '-'}</span>`
-                }</td>
+                        ? `<span class="history-error" title="${esc(h.error)}">${esc(h.error)}</span>`
+                        : `<span style="color:var(--text-tertiary)">Run #${h.run_count || '-'}</span>`
+                    }</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn" ${h.traceback ? '' : 'disabled'} onclick="showOutputModal('Stack Trace', '${encodeURIComponent(h.traceback)}')">Trace</button>
+                        </div>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -1090,6 +1135,11 @@
                     <td><span style="color:var(--text-secondary)">#${dl.run_count || '-'}</span></td>
                     <td><span style="color:var(--text-secondary)">${dl.retry_count || 0}</span></td>
                     <td><span class="history-duration">${dl.execution_time ? dl.execution_time.toFixed(2) + 's' : '-'}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn" ${dl.traceback ? '' : 'disabled'} onclick="showOutputModal('Stack Trace', '${encodeURIComponent(dl.traceback)}')">Trace</button>
+                        </div>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -1138,6 +1188,22 @@
             const res = await fetch(`${API}/api/dead-letters`, { method: 'DELETE' });
             const d = await res.json();
             toast(d.success ? 'success' : 'error', d.success ? `Cleared ${d.cleared} entries` : 'Failed to clear');
+        }
+
+        // Modal
+        function showOutputModal(header, content) {
+            const dialog = document.getElementById('outputModal');
+            const title = document.getElementById('outputModalTitle');
+            const body = document.getElementById('outputModalBody');
+
+            title.textContent = header;
+            body.textContent = decodeURIComponent(content);
+            dialog.showModal();
+        }
+
+        function closeOutputModal() {
+            const dialog = document.getElementById('outputModal');
+            dialog.close();
         }
 
         // Toast

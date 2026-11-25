@@ -101,6 +101,7 @@ class JobHistory:
     status: str
     timestamp: float
     error: Optional[str] = None
+    traceback: Optional[str] = None
     run_count: int = 0
     retry_count: int = 0
     execution_time: Optional[float] = None
